@@ -1,0 +1,23 @@
+name: Bug report / 问题报告
+description: 安装、验证或恢复问题
+body:
+  - type: markdown
+    attributes:
+      value: 请勿上传应用源码、备份、账号数据或聊天记录。输出中的本机路径可以遮盖。
+  - type: input
+    id: version
+    attributes:
+      label: macOS / WorkBuddy / Node.js 版本
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: status --json 输出（遮盖本机路径）
+      render: json
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 执行的命令、错误与预期行为
+    validations:
+      required: true

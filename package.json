@@ -1,0 +1,14 @@
+{
+  "name": "workbuddy-auto-theme",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A small, reversible macOS patch that makes WorkBuddy follow the system light and dark appearance.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22.13" },
+  "bin": { "workbuddy-auto-theme": "bin/workbuddy-auto-theme.mjs" },
+  "scripts": { "test": "node --test", "check": "node scripts/check.mjs" },
+  "repository": { "type": "git", "url": "https://github.com/chillboy67/workbuddy-auto-theme.git" },
+  "author": "Lukas",
+  "files": ["bin", "src", "scripts", "README.md", "README.en.md", "LICENSE", "docs", "安装.command", "卸载.command"]
+}

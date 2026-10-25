@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+coverage/
+*.log
+.env
+.env.*
+backups/
+backup/
+state/
+work/
+*.asar
+appearance*.json
+state.json
+original.js
+*.original.js
+*.tgz
+*.zip
