@@ -43,8 +43,8 @@ test('legacy adoption requires an explicit original backup',t=>{
 });
 test('corrupt original backup fails validation and cannot restore application',t=>{
   const dir=temp(t),state=path.join(dir,'state');fs.mkdirSync(state);const target=path.join(dir,'target.js');fs.writeFileSync(target,'unchanged');
-  const info={appPath:'/Applications/WorkBuddy.app',target};
-  fs.writeFileSync(path.join(state,'state.json'),JSON.stringify({schema:1,version:PROFILE.version,appPath:info.appPath,relativeTarget:PROFILE.relativeTarget,originalHash:PROFILE.originalHash,patchedHash:PROFILE.patchedHash,bytes:PROFILE.bytes}));
+  const info={appPath:'/Applications/WorkBuddy.app',target,version:'5.8.3',relativeTarget:'example/theme.js'};
+  fs.writeFileSync(path.join(state,'state.json'),JSON.stringify({schema:1,version:info.version,appPath:info.appPath,relativeTarget:info.relativeTarget,originalHash:PROFILE.originalHash,patchedHash:PROFILE.patchedHash,bytes:PROFILE.bytes}));
   fs.writeFileSync(path.join(state,'original.js'),'corrupt');
   assert.throws(()=>validateBackup(info,state),/校验/);assert.throws(()=>restoreOriginal(info,state),/校验/);
   assert.equal(fs.readFileSync(target,'utf8'),'unchanged');

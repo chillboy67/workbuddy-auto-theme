@@ -17,14 +17,14 @@
 | 项目 | 要求 |
 | --- | --- |
 | 系统 | macOS；Windows / Linux 不支持 |
-| 客户端 | WorkBuddy **5.8.3**，且主题模块 SHA-256 完全匹配 |
+| 客户端 | 自动查找主题模块；只有 SHA-256 与已验证文件完全匹配才可打补丁（已在 5.8.3 验证） |
 | Node.js | **22.13 或更新版本** |
 | 外观 | WorkBuddy 原生浅色 / 深色；自定义皮肤不支持 |
 | 安装位置 | 默认 `/Applications/WorkBuddy.app`，可用 `--app` 指定 |
 
-版本号相同不代表文件一定相同。工具同时检查 Bundle ID、版本、ASAR 元数据、文件长度和 SHA-256；不匹配就停止，不尝试猜测补丁位置。
+工具按应用包内容自动定位模块，不依赖固定文件名或版本号。它检查 Bundle ID、ASAR 元数据、文件长度和 SHA-256；无法确认文件身份就停止。对检测到原生跟随系统迹象的版本，只提供设置引导；静态检查不能证明当前选项已开启。该检测只扫描有限大小的已打包 JavaScript，未来版本若改变实现，可能无法识别，届时需重新适配。
 
-**v0.1.0 是首次预发布。** 核心补丁已在 macOS / WorkBuddy 5.8.3 真机验证；通用安装工具另有自动化测试，尚未完成所有机器、权限和异常退出场景的实机验收。详见[验证记录](docs/VALIDATION.md)。
+**此项目仍为预发布。** 核心补丁已在 macOS / WorkBuddy 5.8.3 真机验证；通用安装工具另有自动化测试，尚未完成所有机器、权限和异常退出场景的实机验收。详见[验证记录](docs/VALIDATION.md)。
 
 ## 快速开始
 
@@ -106,7 +106,7 @@ node bin/workbuddy-auto-theme.mjs uninstall
 
 ```sh
 node bin/workbuddy-auto-theme.mjs install \
-  --original-backup "/path/to/theme-B1Mw-Fbn.original.js"
+  --original-backup "/path/to/original-theme.js"
 ```
 
 只有原版备份哈希完全匹配才会接管。不会把已打补丁的文件误当作原版备份。接管时的设置快照记录的是接管前状态，不会猜测更早的设置。

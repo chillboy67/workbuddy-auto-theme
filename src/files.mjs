@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { PROFILE, sha256, classify, buildPatch } from './patch.mjs';
+import {findAppTheme,inspectKnownTheme} from './discover.mjs';
+import {pathToFileURL} from 'node:url';
 
 export function assertRegularFile(file) {
   const stat = fs.lstatSync(file);
@@ -48,16 +50,13 @@ export function inspectApp(appPath, version) {
   appPath = path.resolve(appPath);
   if (!appPath.endsWith('.app')) throw new Error('--app 必须指向 WorkBuddy.app 应用包。');
   assertNoSymlink(appPath);
-  const target = path.join(appPath, PROFILE.relativeTarget);
-  assertNoSymlink(target);
-  assertRegularFile(target);
-  const bytes = fs.readFileSync(target);
-  const entry = readAsarEntry(path.join(appPath, 'Contents/Resources/app.asar'), ['renderer','assets',PROFILE.module]);
-  if (!entry?.unpacked || entry.size !== PROFILE.bytes || entry.integrity?.hash !== PROFILE.originalHash) {
-    throw new Error('ASAR 元数据与支持的原版主题文件不匹配。');
-  }
-  if (version !== PROFILE.version) throw new Error(`仅支持 WorkBuddy ${PROFILE.version}；当前为 ${version}。`);
-  return {appPath, target, version, bytes, kind: classify(bytes), hash: sha256(bytes)};
+  const archive=path.join(appPath,'Contents','Resources','app.asar');
+  assertNoSymlink(archive);assertRegularFile(archive);
+  const result=findAppTheme(appPath);
+  if(result.kind!=='known-patch')return {appPath,version,...result};
+  const info=inspectKnownTheme(result,appPath,version,assertNoSymlink,assertRegularFile);
+  info.moduleUrl=pathToFileURL(path.join(appPath,'Contents','Resources','app.asar',...info.logicalPath.split('/'))).href;
+  return info;
 }
 
 export function prepareBackup(info, stateDir, legacyOriginal) {
@@ -78,7 +77,7 @@ export function prepareBackup(info, stateDir, legacyOriginal) {
     original = fs.readFileSync(legacyOriginal);
   }
   buildPatch(original); // Verify both original identity and deterministic output.
-  const manifest = {schema:1, version:info.version, appPath:info.appPath, relativeTarget:PROFILE.relativeTarget,
+  const manifest = {schema:1, version:info.version, appPath:info.appPath, relativeTarget:info.relativeTarget,
     originalHash:PROFILE.originalHash, patchedHash:PROFILE.patchedHash, bytes:PROFILE.bytes};
   atomicWrite(originalFile, original);
   atomicWrite(manifestFile, JSON.stringify(manifest,null,2)+'\n');
@@ -90,7 +89,7 @@ export function validateBackup(info, stateDir) {
   assertNoSymlink(manifestFile); assertNoSymlink(originalFile);
   assertRegularFile(manifestFile); assertRegularFile(originalFile);
   const m = JSON.parse(fs.readFileSync(manifestFile,'utf8'));
-  if (m.schema !== 1 || m.version !== PROFILE.version || m.appPath !== info.appPath || m.relativeTarget !== PROFILE.relativeTarget ||
+  if (m.schema !== 1 || m.version !== info.version || m.appPath !== info.appPath || m.relativeTarget !== info.relativeTarget ||
       m.originalHash !== PROFILE.originalHash || m.patchedHash !== PROFILE.patchedHash || m.bytes !== PROFILE.bytes) {
     throw new Error('备份记录与当前应用不匹配。');
   }

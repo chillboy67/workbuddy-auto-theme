@@ -7,10 +7,10 @@ import {parseArgs} from 'node:util';
 import {PROFILE,sha256} from '../src/patch.mjs';
 import {inspectApp,prepareBackup,validateBackup,writePatched,restoreOriginal,atomicWrite,withLock} from '../src/files.mjs';
 import {appVersion,quitApp,openApp,debugSession} from '../src/platform.mjs';
-import {SNAPSHOT,ENABLE,READ_STATE,restoreExpression,assertAutoState,verifyMedia} from '../src/runtime.mjs';
-import {hasNativeSystemTheme,nativeSystemThemeMessage} from '../src/version-guidance.mjs';
+import {SNAPSHOT,enableExpression,readStateExpression,restoreExpression,assertAutoState,verifyMedia} from '../src/runtime.mjs';
+import {nativeSystemThemeMessage} from '../src/version-guidance.mjs';
 
-const HELP=`WorkBuddy Auto Theme v0.1.0 — macOS 原生深浅色自动跟随
+const HELP=`WorkBuddy Auto Theme v0.1.1 — macOS 原生深浅色自动跟随
 
 用法：node bin/workbuddy-auto-theme.mjs <命令> [选项]
 
@@ -27,9 +27,9 @@ const HELP=`WorkBuddy Auto Theme v0.1.0 — macOS 原生深浅色自动跟随
   --json                status 输出 JSON
   --help                显示帮助
 
-补丁仅支持已验证的 WorkBuddy 5.8.3 主题文件哈希；5.9.2 已有原生跟随系统选项。
+自动查找主题模块；只有内容哈希经过验证时才允许安装补丁。
 补丁会使原有资源签名校验失效；不会重签名或关闭系统安全检查。
-备份只存本机，不随卸载删除。未知版本或哈希会停止操作。`;
+备份只存本机，不随卸载删除。未知内容会停止操作。`;
 
 async function confirm(command,yes){
   if(yes)return;
@@ -57,20 +57,26 @@ async function main(){
   const app=path.resolve(values.app),stateDir=path.resolve(values['state-dir']),port=Number(values.port);
   if(!Number.isInteger(port)||port<1024||port>65535)throw new Error('--port 必须是 1024–65535 的整数。');
   const version=appVersion(app);
-  if(hasNativeSystemTheme(version)){
+  const info=inspectApp(app,version);
+  if(info.kind==='native-candidate'){
     const guidance=nativeSystemThemeMessage(version);
     if(command==='status'){
-      console.log(values.json?JSON.stringify({version,state:'native-system-theme',runtime:'not inspected',guidance},null,2):guidance);
+      console.log(values.json?JSON.stringify({version,state:'native-candidate',runtime:'not inspected',evidence:info.evidence,guidance},null,2):guidance);
       return;
     }
     throw new Error(guidance);
   }
-  if(version!==PROFILE.version)throw new Error(`补丁仅支持 WorkBuddy ${PROFILE.version}；当前为 ${version}，尚未验证此版本。`);
-  const info=inspectApp(app,version);
+  if(info.kind==='unsupported'){
+    if(command==='status'){
+      const status={version,state:'unsupported',runtime:'not inspected',scanComplete:info.scanComplete};
+      console.log(values.json?JSON.stringify(status,null,2):'未发现可安全处理的主题模块，未修改应用。');return;
+    }
+    throw new Error('未发现经过验证的主题模块；停止操作，未修改应用。');
+  }
   if(command==='status'){
     let backup='absent';
     if(fs.existsSync(path.join(stateDir,'state.json'))){try{validateBackup(info,stateDir);backup='valid';}catch{backup='invalid';}}
-    const status={version:info.version,module:PROFILE.module,state:info.kind,sha256:info.hash,backup,
+    const status={version:info.version,module:info.logicalPath,state:info.kind,sha256:info.hash,backup,
       signatureEffect:info.kind==='patched'?'modified signed resource':'not evaluated',runtime:'not inspected',appPath:app,stateDir};
     console.log(values.json?JSON.stringify(status,null,2):
       `版本：${status.version}\n主题文件：${status.state}\n备份：${status.backup}\n运行态：未连接（status 只检查磁盘）\n备份目录：${stateDir}`);
@@ -89,12 +95,12 @@ async function main(){
         try{
           snapshot=await client.evaluate(SNAPSHOT);
           if(snapshot.skin)throw new Error('当前使用自定义皮肤。请先在 WorkBuddy 外观中选择原生浅色或深色，再安装。');
-          restoreExpression(snapshot); // Validate the snapshot before any runtime mutation.
+          restoreExpression(snapshot,info.moduleUrl); // Validate the snapshot before any runtime mutation.
           if(!fs.existsSync(appearanceFile))atomicWrite(appearanceFile,JSON.stringify(snapshot,null,2)+'\n');
-          await client.evaluate(ENABLE);
-          assertAutoState(await client.evaluate(READ_STATE));
+          await client.evaluate(enableExpression(info.moduleUrl));
+          assertAutoState(await client.evaluate(readStateExpression(info.moduleUrl)));
         }catch(error){
-          if(snapshot){try{await client.evaluate(restoreExpression(snapshot));}catch(restoreError){throw new AggregateError([error,restoreError],'安装失败，运行态恢复也失败；备份已保留。');}}
+          if(snapshot){try{await client.evaluate(restoreExpression(snapshot,info.moduleUrl));}catch(restoreError){throw new AggregateError([error,restoreError],'安装失败，运行态恢复也失败；备份已保留。');}}
           throw error;
         }
       });
@@ -113,12 +119,12 @@ async function main(){
   if(command==='verify'){
     if(info.kind!=='patched')throw new Error('当前未安装受支持的补丁。');
     const results=await debugSession(app,port,async client=>{
-      assertAutoState(await client.evaluate(READ_STATE));
-      const media=await verifyMedia(client);
+      assertAutoState(await client.evaluate(readStateExpression(info.moduleUrl)));
+      const media=await verifyMedia(client,info.moduleUrl);
       await client.send('Page.reload',{ignoreCache:true});
       let last;
       for(let i=0;i<100;i++){
-        try{const state=await client.evaluate(READ_STATE);assertAutoState(state);last=null;break;}
+        try{const state=await client.evaluate(readStateExpression(info.moduleUrl));assertAutoState(state);last=null;break;}
         catch(error){last=error;await new Promise(r=>setTimeout(r,200));}
       }
       if(last)throw last;
@@ -131,7 +137,7 @@ async function main(){
   const appearanceFile=path.join(stateDir,'appearance.json');
   if(!fs.existsSync(appearanceFile))throw new Error('缺少安装前外观备份；停止卸载，请参考 docs/RECOVERY.md 手动恢复。');
   const snapshot=JSON.parse(fs.readFileSync(appearanceFile,'utf8'));
-  const expression=restoreExpression(snapshot);
+  const expression=restoreExpression(snapshot,info.moduleUrl);
   await debugSession(app,port,async client=>{
     await client.evaluate(expression);
     restoreOriginal(info,stateDir);

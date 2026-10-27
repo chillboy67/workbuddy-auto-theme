@@ -2,9 +2,6 @@ import crypto from 'node:crypto';
 
 export const FLAG = 'workbuddy.autoTheme.enabled';
 export const PROFILE = Object.freeze({
-  version: '5.8.3',
-  module: 'theme-B1Mw-Fbn.js',
-  relativeTarget: 'Contents/Resources/app.asar.unpacked/renderer/assets/theme-B1Mw-Fbn.js',
   originalHash: '6c27166fa8dbd8046315aff5787fde65ae06398e00d2e4dd020a509139aa27f9',
   patchedHash: 'e5ce8e30f0158fbd3b1d70a4545bd3890dea3bbe04c2f60d0efe4fb9e181b80e',
   bytes: 10592,

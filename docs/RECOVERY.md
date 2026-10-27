@@ -40,10 +40,11 @@ import os from 'node:os';
 import path from 'node:path';
 import {sha256, PROFILE} from './src/patch.mjs';
 import {inspectApp, validateBackup, restoreOriginal} from './src/files.mjs';
+import {appVersion} from './src/platform.mjs';
 // 在项目根目录执行。inspectApp 同时检查 ASAR 元数据和目标文件身份。
 const app='/Applications/WorkBuddy.app';
 const state=path.join(os.homedir(),'Library/Application Support/WorkBuddy Auto Theme');
-const info=inspectApp(app,PROFILE.version);
+const info=inspectApp(app,appVersion(app));
 validateBackup(info,state);
 if(sha256(fs.readFileSync(info.target))!==PROFILE.patchedHash &&
    sha256(fs.readFileSync(info.target))!==PROFILE.originalHash)throw Error('目标文件已改变，停止恢复');

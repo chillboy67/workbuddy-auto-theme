@@ -11,12 +11,12 @@ A small, reversible macOS patch that makes WorkBuddy follow the system's light a
 ## Compatibility
 
 - macOS only.
-- WorkBuddy **5.8.3**, with the exact supported theme module SHA-256 and ASAR metadata. Other builds are rejected, even if the displayed version is identical.
+- Discovers theme modules by archive contents, without fixed filenames or version gating. Patching requires an exact validated SHA-256 and ASAR metadata; the known patch was tested on WorkBuddy 5.8.3. Unknown content is rejected. Native theme indicators only prompt the user to check settings; they do not verify the live state. Detection scans a bounded amount of packed JavaScript and may miss future implementations.
 - Node.js **22.13+**.
 - Native light / dark themes only. Switch away from custom skins before installation.
 - Default app: `/Applications/WorkBuddy.app`; override with `--app`.
 
-**v0.1.0 is an initial prerelease.** The core patch was tested on a real macOS installation. The generalized installer has automated coverage; its complete workflow has not been validated on every real-machine configuration. See [validation scope](docs/VALIDATION.md).
+**This project is a prerelease.** The core patch was tested on a real macOS installation. The generalized installer has automated coverage; its complete workflow has not been validated on every real-machine configuration. See [validation scope](docs/VALIDATION.md).
 
 ## Use
 
