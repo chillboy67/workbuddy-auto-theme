@@ -8,6 +8,7 @@ import {PROFILE,sha256} from '../src/patch.mjs';
 import {inspectApp,prepareBackup,validateBackup,writePatched,restoreOriginal,atomicWrite,withLock} from '../src/files.mjs';
 import {appVersion,quitApp,openApp,debugSession} from '../src/platform.mjs';
 import {SNAPSHOT,ENABLE,READ_STATE,restoreExpression,assertAutoState,verifyMedia} from '../src/runtime.mjs';
+import {hasNativeSystemTheme,nativeSystemThemeMessage} from '../src/version-guidance.mjs';
 
 const HELP=`WorkBuddy Auto Theme v0.1.0 — macOS 原生深浅色自动跟随
 
@@ -26,7 +27,7 @@ const HELP=`WorkBuddy Auto Theme v0.1.0 — macOS 原生深浅色自动跟随
   --json                status 输出 JSON
   --help                显示帮助
 
-仅支持已验证的 WorkBuddy 5.8.3 主题文件哈希。
+补丁仅支持已验证的 WorkBuddy 5.8.3 主题文件哈希；5.9.2 已有原生跟随系统选项。
 补丁会使原有资源签名校验失效；不会重签名或关闭系统安全检查。
 备份只存本机，不随卸载删除。未知版本或哈希会停止操作。`;
 
@@ -55,7 +56,17 @@ async function main(){
   if(process.platform!=='darwin')throw new Error('此工具仅支持 macOS。');
   const app=path.resolve(values.app),stateDir=path.resolve(values['state-dir']),port=Number(values.port);
   if(!Number.isInteger(port)||port<1024||port>65535)throw new Error('--port 必须是 1024–65535 的整数。');
-  const info=inspectApp(app,appVersion(app));
+  const version=appVersion(app);
+  if(hasNativeSystemTheme(version)){
+    const guidance=nativeSystemThemeMessage(version);
+    if(command==='status'){
+      console.log(values.json?JSON.stringify({version,state:'native-system-theme',runtime:'not inspected',guidance},null,2):guidance);
+      return;
+    }
+    throw new Error(guidance);
+  }
+  if(version!==PROFILE.version)throw new Error(`补丁仅支持 WorkBuddy ${PROFILE.version}；当前为 ${version}，尚未验证此版本。`);
+  const info=inspectApp(app,version);
   if(command==='status'){
     let backup='absent';
     if(fs.existsSync(path.join(stateDir,'state.json'))){try{validateBackup(info,stateDir);backup='valid';}catch{backup='invalid';}}

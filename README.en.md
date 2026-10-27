@@ -4,6 +4,8 @@
 
 A small, reversible macOS patch that makes WorkBuddy follow the system's light and dark appearance. Keeps the native interface. No third-party runtime dependencies, background daemon, login item, or persistent debugging port.
 
+**WorkBuddy 5.9.2:** the native Appearance settings already provide **System**. Select it in WorkBuddy, then choose Auto in macOS System Settings → Appearance. On 2026-10-27, the WorkBuddy appearance settings window was observed changing with real macOS light and dark switches on one Mac. Do not apply the 5.8.3 patch or restore its app files into 5.9.2. See [the 5.9.2 note](docs/WORKBUDDY-5.9.2.md).
+
 **This modifies a signed JavaScript resource inside WorkBuddy and invalidates the original resource signature verification.** It does not re-sign the application, remove quarantine, or disable macOS security checks. Updates may replace the patch. macOS may reject a modified application: retain your backup and follow [recovery instructions](docs/RECOVERY.md) if needed.
 
 ## Compatibility
