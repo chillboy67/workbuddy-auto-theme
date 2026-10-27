@@ -1,5 +1,7 @@
 # WorkBuddy Auto Theme
 
+> **项目已停止更新。** WorkBuddy 官方已提供「System（跟随系统）」外观选项；在已验证的 5.9.2 中可直接使用。本项目保留给不愿升级、仍在使用 **5.8.3 或更早版本**的用户参考和使用。补丁仅在 5.8.3 上完成过真机验证，更早版本未经验证；只有主题文件通过工具的完整性校验时才能安装。
+
 [English](README.en.md) · [下载](https://github.com/chillboy67/workbuddy-auto-theme/releases) · [实现原理](docs/DESIGN.md) · [恢复指南](docs/RECOVERY.md)
 
 让 macOS 版 WorkBuddy 随系统自动切换原生浅色和深色。

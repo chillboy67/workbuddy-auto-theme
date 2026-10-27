@@ -1,5 +1,7 @@
 # WorkBuddy Auto Theme
 
+> **This project is no longer maintained.** WorkBuddy now provides a native System appearance option, confirmed in version 5.9.2. This project remains available for people who prefer to stay on **5.8.3 or earlier**. The patch has been tested on 5.8.3; earlier versions have not been verified and can only be patched if the tool validates their theme file.
+
 [简体中文](README.md) · [Releases](https://github.com/chillboy67/workbuddy-auto-theme/releases)
 
 A small, reversible macOS patch that makes WorkBuddy follow the system's light and dark appearance. Keeps the native interface. No third-party runtime dependencies, background daemon, login item, or persistent debugging port.
